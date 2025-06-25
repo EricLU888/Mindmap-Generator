@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en-US">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="device-width">
+        <meta name="description" content="test_page">
+        <title>Version 0.1.0</title>
+
+        <style>
+            .node{
+                position: absolute;
+                transform: translate(-50%, -50%);
+                text-align: center;
+                border-radius: 20px;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                z-index: 1;
+            }
+            .node.level-0{
+                background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+                font-size: 16px;
+                font-weight: bold;
+                min-width: 140px;
+                padding: 14px 22px;
+            }
+            .node.level-1 {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            font-size: 14px;
+            min-width: 120px;
+            }
+
+            .node.level-2 {
+                background: linear-gradient(135deg, #a8e6cf, #7fcdcd);
+                color: #333;
+                font-size: 12px;
+                min-width: 100px;
+            }
+
+            .node.level-3 {
+                background: linear-gradient(135deg, #ffd93d, #ff9f43);
+                color: #333;
+                font-size: 11px;
+                min-width: 90px;
+            }
+
+            .node.level-4 {
+                background: linear-gradient(135deg, #c44569, #f8b500);
+                font-size: 10px;
+                min-width: 80px;
+            }
+
+            .connection{
+                position: absolute;
+                background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+                height: 2px;
+                transform-origin: left center; /*左端中心为连接点*/
+                z-index: 0;
+            }
+
+        </style>
+        <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    </head>
+    <body>
+        <div class="container">
+            <div class="mindmapPanel">
+                <div id="mindmap">
+
+                </div>
+            </div>
+        </div>     
+    <script>
+        const sampleData = {
+            nodes: [
+                { id: 0, text: "Main Topic", level: 0, children: [1, 2] },
+                { id: 1, text: "Subtopic A", level: 1, children: [3, 4] },
+                { id: 2, text: "Subtopic B", level: 1, children: [5] },
+                { id: 3, text: "Detail 1", level: 2, children: [] },
+                { id: 4, text: "Detail 2", level: 2, children: [] },
+                { id: 5, text: "Detail 3", level: 2, children: [6] },
+                { id: 6, text: "Sub-detail", level: 3, children: [] }
+            ]
+        };
+
+        const CONFIG = {
+            centerX : 400,
+            centerY : 300,
+            baseRadius: 120, // 基础半径
+            levelSeparation: 80, // 每个层级之间的间隔
+        }
+
+
+        function generatePositions(nodes){ // 生成节点位置
+            const positions = {};
+            const root = nodes.find(n => n.level === 0); // 找到根节点
+
+            positions[root.id] = {
+                x: CONFIG.centerX,
+                y: CONFIG.centerY,
+                level: root.level
+            }; // 保存根节点位置
+
+            function layoutChildren(parent, angleSet = -Math.PI / 2, angleRange = Math.PI){
+                const children = parent.children.map(id => nodes.find(n => n.id === id)); // 获取子节点
+                if (children.length === 0) return;
+
+                const parentPos = positions[parent.id];
+                const radius = CONFIG.baseRadius + (parent.level * CONFIG.levelSeparation);
+
+                // 每个子节点分配一个小扇形
+                const angleStep = angleRange / children.length;
+
+                children.forEach((child, i) => {
+                    // 每个子节点的中心角度
+                    const childAngleSet = angleSet + i * angleStep;
+                    // 在自己扇形的正中间
+                    const angle = childAngleSet + angleStep / 2;
+                    const x = parentPos.x + Math.cos(angle) * radius;
+                    const y = parentPos.y + Math.sin(angle) * radius;
+
+                    positions[child.id] = { x, y, level: child.level };
+                    // 递归时只在自己分配的小扇形内布局
+                    layoutChildren(child, childAngleSet, angleStep);
+                });
+            }
+            layoutChildren(root); // 从根节点开始布局
+            return positions;
+        };
+        
+        function generateConnections(nodes, positions){
+            return nodes
+                .filter(node => node.children.length > 0) // 只保留有子节点的节点
+                .flatMap(node =>
+                    // 对每个子节点，生成一条从父节点到子节点的连接对象
+                    node.children.map(childId => ({
+                        from: node.id,                // 父节点 id
+                        to: childId,                  // 子节点 id
+                        fromPos: positions[node.id],  // 父节点
+                        toPos : positions[childId]
+                    }))
+                );
+
+        };
+
+        function renderMindmap(){
+            const container = document.getElementById("mindmap");
+            container.innerHTML = ""; // 清空容器
+            container.style.width = "800px";
+            container.style.height = "600px";
+
+
+            const positions = generatePositions(sampleData.nodes); // 生成节点位置
+            const connections = generateConnections(sampleData.nodes, positions); // 生成连接
+
+            connections.forEach(conn => {
+                const line = document.createElement("div");
+                line.className = "connection";
+
+                const dx = conn.toPos.x - conn.fromPos.x; //相对x坐标
+                const dy = conn.toPos.y - conn.fromPos.y; //相对y坐标
+                const length = Math.sqrt(dx * dx + dy * dy);   //connection的长度
+                const angle = Math.atan2(dy,dx) * 180 / Math.PI;
+
+                line.style.cssText = `
+                    left: ${conn.fromPos.x}px;
+                    top: ${conn.fromPos.y}px;
+                    width: ${length}px;
+                    transform: rotate(${angle}deg);
+                `;
+                container.appendChild(line); // 添加连接线到容器
+            });
+            
+            sampleData.nodes.forEach(node => {
+                const pos = positions[node.id];
+                const element = document.createElement("div");
+                element.className = `node level-${node.level}`;
+                element.textContent = node.text;
+                element.style.left = `${pos.x}px`;
+                element.style.top = `${pos.y}px`;
+                container.appendChild(element); // 添加节点到容器
+            });
+        }
+
+        renderMindmap(); // 渲染思维导图
+
+
+
+
+    </script>    
+    </body>
+</html>
