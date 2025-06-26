@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en-US">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="device-width">
+        <meta name="description" content="test_page">
+        <title>Version 0.1.1</title>
+
+        <style>
+            * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            }
+            header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            text-align: center;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            }
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+            }
+            .container{
+                margin-top: 20px;
+                display: flex;
+                justify-content: flex-start;
+                align-items: flex-start;
+                flex: 1;
+                gap: 32px;
+                padding-left: 20px;  
+                padding-right: 20px; 
+            }
+            .left-panel {
+                display: flex;
+                flex-direction: column;
+                gap: 24px;
+                min-width: 320px;
+                width: 450px;
+                /* 不要再加左右margin，靠container的padding控制 */
+            }
+            #input-panel, #instructions {
+                background: rgba(255,255,255,0.95);
+                border-radius: 12px;
+                padding: 24px;
+                margin-bottom: 0;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            }
+            .mindmapPanel {
+                flex: 1;
+                min-width: 600px;
+                background: rgba(255,255,255,0.95);
+                border-radius: 12px;
+                padding: 24px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-start;
+                align-items: stretch;
+                /* 不要再加左右margin，靠container的padding控制 */
+            }
+            #mindmap {
+                width: 100%;
+                height: 600px;
+                border: 2px solid #ddd;
+                border-radius: 10px;
+                position: relative;
+                overflow: auto;
+                background: radial-gradient(circle at center, #f8f9ff 0%, #e8ecff 100%);
+                /* 保证内容不会超出容器 */
+                box-sizing: border-box;
+            }
+            .mindmap{
+                width: 100%;
+                height: 600px;
+                border: 2px solid #ddd;
+                border-radius: 10px;
+                position: relative;
+                overflow: auto;
+                background: radial-gradient(circle at center, #f8f9ff 0%, #e8ecff 100%);
+            }
+            .node{
+                position: absolute;
+                transform: translate(-50%, -50%);
+                text-align: center;
+                border-radius: 20px;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                z-index: 1;
+            }
+            .node.level-0{
+                background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+                font-size: 16px;
+                font-weight: bold;
+                min-width: 140px;
+                padding: 14px 22px;
+            }
+            .node.level-1 {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            font-size: 14px;
+            min-width: 120px;
+            }
+
+            .node.level-2 {
+                background: linear-gradient(135deg, #a8e6cf, #7fcdcd);
+                color: #333;
+                font-size: 12px;
+                min-width: 100px;
+            }
+
+            .node.level-3 {
+                background: linear-gradient(135deg, #ffd93d, #ff9f43);
+                color: #333;
+                font-size: 11px;
+                min-width: 90px;
+            }
+
+            .node.level-4 {
+                background: linear-gradient(135deg, #c44569, #f8b500);
+                font-size: 10px;
+                min-width: 80px;
+            }
+
+            .connection{
+                position: absolute;
+                background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+                height: 2px;
+                transform-origin: left center; /*左端中心为连接点*/
+                z-index: 0;
+            }
+            textarea{
+                width: 100%;
+                height: 350px;
+                border: 2px solid #ddd;
+                border-radius: 10px;
+                padding: 15px;
+                font-size: 14px;
+                font-family: 'Courier New', monospace;
+                resize: vertical;
+                transition: border-color 0.3s ease;
+                line-height: 1.5;
+            }
+        </style>
+        <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    </head>
+    <body>
+        <header>
+            <h1 style="text-align: center; color: white; margin: 20px 0;">MindMap Generator</h1>
+            <p style="text-align: center; color: white;">Version 0.1.1</p>
+        </header>
+        <div class="container">
+            <div class="left-panel">
+                <div id="input-panel">
+                    <h2>Input Panel</h2>
+                    <textarea style="width:100%;height:120px;"></textarea>
+                </div>
+                <div id="instructions">
+                    <h2>Instructions</h2>
+                </div>
+            </div>
+            <div class="mindmapPanel">
+                <div id="mindmap"></div>
+            </div>
+        </div>     
+    <script>
+        const sampleData = {
+            nodes: [
+                { id: 0, text: "Main Topic", level: 0, children: [1, 2] },
+                { id: 1, text: "Subtopic A", level: 1, children: [3, 4] },
+                { id: 2, text: "Subtopic B", level: 1, children: [5] },
+                { id: 3, text: "Detail 1", level: 2, children: [] },
+                { id: 4, text: "Detail 2", level: 2, children: [] },
+                { id: 5, text: "Detail 3", level: 2, children: [6] },
+                { id: 6, text: "Sub-detail", level: 3, children: [] }
+            ]
+        };
+
+        const CONFIG = {
+            centerX : 400,
+            centerY : 300,
+            baseRadius: 120, // 基础半径
+            levelSeparation: 80, // 每个层级之间的间隔
+        }
+
+
+        function generatePositions(nodes){ // 生成节点位置
+            const positions = {};
+            const root = nodes.find(n => n.level === 0); // 找到根节点
+
+            positions[root.id] = {
+                x: CONFIG.centerX,
+                y: CONFIG.centerY,
+                level: root.level
+            }; // 保存根节点位置
+
+            function layoutChildren(parent, angleSet = -Math.PI / 2, angleRange = Math.PI){
+                const children = parent.children.map(id => nodes.find(n => n.id === id)); // 获取子节点
+                if (children.length === 0) return;
+
+                const parentPos = positions[parent.id];
+                const radius = CONFIG.baseRadius + (parent.level * CONFIG.levelSeparation);
+
+                // 每个子节点分配一个小扇形
+                const angleStep = angleRange / children.length;
+
+                children.forEach((child, i) => {
+                    // 每个子节点的中心角度
+                    const childAngleSet = angleSet + i * angleStep;
+                    // 在自己扇形的正中间
+                    const angle = childAngleSet + angleStep / 2;
+                    const x = parentPos.x + Math.cos(angle) * radius;
+                    const y = parentPos.y + Math.sin(angle) * radius;
+
+                    positions[child.id] = { x, y, level: child.level };
+                    // 递归时只在自己分配的小扇形内布局
+                    layoutChildren(child, childAngleSet, angleStep);
+                });
+            }
+            layoutChildren(root); // 从根节点开始布局
+            return positions;
+        };
+        
+        function generateConnections(nodes, positions){
+            return nodes
+                .filter(node => node.children.length > 0) // 只保留有子节点的节点
+                .flatMap(node =>
+                    // 对每个子节点，生成一条从父节点到子节点的连接对象
+                    node.children.map(childId => ({
+                        from: node.id,                // 父节点 id
+                        to: childId,                  // 子节点 id
+                        fromPos: positions[node.id],  // 父节点
+                        toPos : positions[childId]
+                    }))
+                );
+
+        };
+
+        // 渲染思维导图主函数
+        function renderMindmap(){
+            const container = document.getElementById("mindmap");
+            container.innerHTML = ""; // 清空容器
+            container.style.width = "100%";
+            container.style.height = "600px";
+            container.style.position = "relative";
+            container.style.overflow = "auto";
+
+            const positions = generatePositions(sampleData.nodes); // 生成节点位置
+            const connections = generateConnections(sampleData.nodes, positions); // 生成连接
+
+            // 计算所有节点的最大/最小x/y，动态调整内容区域，保证所有节点都在可视范围内
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            Object.values(positions).forEach(pos => {
+                if (pos.x < minX) minX = pos.x;
+                if (pos.y < minY) minY = pos.y;
+                if (pos.x > maxX) maxX = pos.x;
+                if (pos.y > maxY) maxY = pos.y;
+            });
+            const padding = 40;
+            const contentWidth = Math.max(800, maxX - minX + padding * 2);
+            const contentHeight = Math.max(600, maxY - minY + padding * 2);
+
+            // 计算内容区居中所需的偏移量
+            const containerRect = container.getBoundingClientRect();
+            // 居中偏移量，若内容小于容器则居中，否则为0
+            const offsetX = (container.offsetWidth - contentWidth) / 2 > 0 ? (container.offsetWidth - contentWidth) / 2 : 0;
+            const offsetY = (container.offsetHeight - contentHeight) / 2 > 0 ? (container.offsetHeight - contentHeight) / 2 : 0;
+
+            // 创建内容包裹层，保证节点不会溢出，并居中显示
+            const content = document.createElement("div");
+            content.style.position = "absolute";
+            content.style.width = contentWidth + "px";
+            content.style.height = contentHeight + "px";
+            content.style.left = offsetX + "px";
+            content.style.top = offsetY + "px";
+
+            // 渲染所有连接线
+            connections.forEach(conn => {
+                const line = document.createElement("div");
+                line.className = "connection";
+                const dx = conn.toPos.x - conn.fromPos.x;
+                const dy = conn.toPos.y - conn.fromPos.y;
+                const length = Math.sqrt(dx * dx + dy * dy); // 计算线段长度
+                const angle = Math.atan2(dy, dx) * 180 / Math.PI; // 计算旋转角度
+                // 设置连接线的起点、长度和角度
+                line.style.cssText = `
+                    left: ${conn.fromPos.x - minX + padding}px;
+                    top: ${conn.fromPos.y - minY + padding}px;
+                    width: ${length}px;
+                    transform: rotate(${angle}deg);
+                `;
+                content.appendChild(line);
+            });
+
+            // 渲染所有节点
+            sampleData.nodes.forEach(node => {
+                const pos = positions[node.id];
+                const element = document.createElement("div");
+                element.className = `node level-${node.level}`;
+                element.textContent = node.text;
+                // 设置节点在内容区的位置
+                element.style.left = `${pos.x - minX + padding}px`;
+                element.style.top = `${pos.y - minY + padding}px`;
+                content.appendChild(element);
+            });
+
+            container.appendChild(content); // 将内容区添加到主容器
+}
+        renderMindmap(); // 渲染思维导图
+
+
+
+
+    </script>    
+    </body>
+</html>
