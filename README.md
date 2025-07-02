@@ -8,7 +8,7 @@ In this version
   <li>Panel plan of 'Instruction', 'Input' and 'Header'</li>
   <li>Fix center of mindmap generated</li>
 </ul>
-have been finished. And in next version 'Instruction' and 'Input' will be considered as priority.
+have been finished. And in next version 'Instruction' and 'Input' will be considered as priority.</br>
 
 
 
