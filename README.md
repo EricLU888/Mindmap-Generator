@@ -9,3 +9,14 @@ In this version
   <li>Fix center of mindmap generated</li>
 </ul>
 have been finished. And in next version 'Instruction' and 'Input' will be considered as priority.
+
+
+
+Version 0.2.0
+In this version
+<ul>
+  <li>The way of connection in V0.1.1, has changed from the left top corner to the center of the node</li>
+  <li>Beautified the left and right panel</li>
+  <li>Finished Interactions and ParseTextToNodes</li>
+  <li>Revised position issues</li>
+</ul>
