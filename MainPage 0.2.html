@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Version 0.2</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            text-align: center;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .container {
+            display: flex;
+            flex: 1;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .left-panel {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        textarea {
+            width: 100%;
+            height: 350px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+            line-height: 1.5;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+        .generate-btn {
+            width: 100%;
+            margin-top: 15px;
+            padding: 12px 25px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        .mindmapPanel {
+            flex: 2;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        #mindmap {
+            width: 100%;
+            flex-grow: 1;
+            min-height: 500px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            position: relative;
+            overflow: auto;
+            background: radial-gradient(circle at center, #f8f9ff 0%, #e8ecff 100%);
+            margin-bottom: 20px;
+        }
+        .node {
+            position: absolute;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            cursor: move;
+            transition: all 0.3s ease;
+            user-select: none;
+            font-weight: 500;
+            text-align: center;
+            min-width: 100px;
+            max-width: 180px;
+            word-wrap: break-word;
+            transform-origin: center;
+            font-size: 13px;
+            z-index: 1;
+        }
+
+        .node.level-0 {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            font-size: 16px;
+            font-weight: bold;
+            min-width: 140px;
+            padding: 14px 22px;
+        }
+
+        .node.level-1 {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            font-size: 14px;
+            min-width: 120px;
+        }
+
+        .node.level-2 {
+            background: linear-gradient(135deg, #a8e6cf, #7fcdcd);
+            color: #333;
+            font-size: 12px;
+            min-width: 100px;
+        }
+
+        .node.level-3 {
+            background: linear-gradient(135deg, #ffd93d, #ff9f43);
+            color: #333;
+            font-size: 11px;
+            min-width: 90px;
+        }
+
+        .node.level-4 {
+            background: linear-gradient(135deg, #c44569, #f8b500);
+            font-size: 10px;
+            min-width: 80px;
+        }
+
+        .connection {
+            position: absolute;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            height: 2px;
+            transform-origin: left center;
+            z-index: 0;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            margin-top: 250px;
+            font-size: 18px;
+        }
+
+        .error {
+            color: #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid #e74c3c;
+        }
+
+        .instructions {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .instructions h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .instructions p, .instructions ul {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+
+        .instructions ul {
+            padding-left: 20px;
+        }
+
+        .instructions code {
+            background: rgba(0, 0, 0, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1 style="text-align: center; color: white; margin: 20px 0;">MindMap Generator</h1>
+        <p style="text-align: center; color: white;">Version 0.2</p>
+    </header>
+    <div class="container">
+        <div class="left-panel">
+            <h2>Input Panel</h2>
+            <textarea id="textInput" placeholder="Use # for different levels:
+
+# Main Topic
+## Subtopic 1
+### Detail A
+### Detail B
+## Subtopic 2
+### Detail C
+#### Sub-detail 1
+#### Sub-detail 2"></textarea>
+            <button class="generate-btn" onclick="generateMindmap()" id="generateBtn">Generate Mindmap</button>
+
+            <div class = "instructions">
+                <h2>Instructions</h2>
+                <p><strong>To use this generator you needs to know:</strong></p>
+                <ul>
+                    <li>Use <code>#</code> for the main central topic</li>
+                    <li>Use <code>##</code> for primary branches</li>
+                    <li>Use <code>###</code> for secondary branches</li>
+                    <li>Use <code>####</code> and <code>#####</code> for deeper levels</li>
+                    <li>Keep node text concise (2-4 words max)</li>
+                    <li>Organize hierarchically with logical relationships</li>
+                    <li>Maximum 5 levels deep for readability</li>
+                </ul>
+                <p><strong>Example of content for AI</strong><br>
+                "Create a hierarchical mindmap about [TOPIC] using markdown headers. Start with # for the main topic, ## for major subtopics, ### for details, etc. Keep each node to 2-4 words."</p>
+            </div>
+        </div>
+        
+        <div class="mindmapPanel">
+            <h2>Mindmap</h2>
+            <div id="mindmap"></div>
+        </div>
+    </div>      
+    <script>
+        const CONFIG = {
+            centerX: 400,
+            centerY: 300,
+            baseRadius: 120,
+            levelSeparation: 80
+        };
+
+        // 解析输入文本为节点
+        function parseTextToNodes(text) {
+            const lines = text.split('\n');
+            const nodes = [];
+            const parentStack = [];
+            lines.forEach(line => {
+                line = line.trim();
+                if (!line) return; // 跳过空行
+                const match = line.match(/^(#+)\s*(.*)/); // 匹配markdown标题 ^ 行首 #+ 表示一个或多个#，\s*表示可选空格，(.*)捕获标题文本
+                if (!match) return;
+                const level = match[1].length; // 标题级别
+                const textContent = match[2].trim(); // 节点文本
+                if (!textContent) return;
+                // 保证parentStack只保留当前层级的父节点
+                while (parentStack.length >= level) parentStack.pop();
+                const parent = parentStack.length > 0 ? parentStack[parentStack.length - 1] : null; // 判断父节点 如果没有为null
+                const node = {
+                    id: nodes.length,      // 节点唯一id
+                    text: textContent,     // 节点文本
+                    level: level - 1,      // 层级（#为0，##为1，依此类推）
+                    parent,                // 父节点id
+                    children: []           // 子节点id数组
+                };
+                if (parent !== null) nodes[parent].children.push(node.id); // 记录父节点的子节点
+                parentStack.push(node.id); // 当前节点入栈
+                nodes.push(node);          // 加入节点数组
+            });
+            return nodes;
+        }
+
+        // 计算节点布局
+        function calculateLayout(nodes) {
+            const positions = {};    // 节点id到坐标的映射
+            const connections = [];  // 连线数组
+            const root = nodes.find(n => n.level === 0); // 找到根节点
+            if (!root) return { positions, connections };
+            // 根节点居中
+            positions[root.id] = { x: CONFIG.centerX, y: CONFIG.centerY, level: root.level };
+            // 递归布局所有子节点
+            function layoutChildren(parent, startAngle = -Math.PI/2, angleRange = Math.PI) {
+                const children = parent.children.map(id => nodes[id]);
+                if (children.length === 0) return;
+                const parentPos = positions[parent.id];
+                const radius = CONFIG.baseRadius + (parent.level * CONFIG.levelSeparation); // 当前层级半径
+                // 每个子节点分配一个小扇形
+                const angleStep = angleRange / Math.max(1, children.length + 1);
+                children.forEach((child, i) => {
+                    // 计算每个子节点的角度
+                    const angle = startAngle + (i + 1) * angleStep;
+                    const x = parentPos.x + Math.cos(angle) * radius;
+                    const y = parentPos.y + Math.sin(angle) * radius;
+                    positions[child.id] = { x, y, level: child.level };
+                    // 记录连线
+                    connections.push({
+                        from: parent.id,
+                        to: child.id,
+                        fromPos: parentPos,
+                        toPos: positions[child.id]
+                    });
+                    // 递归布局子节点
+                    layoutChildren(child, angle - angleStep/2, angleStep);
+                });
+            }
+            layoutChildren(root);
+            return { positions, connections };
+        }
+
+        // 渲染思维导图
+        function renderMindmap(nodes, positions, connections) {
+            const container = document.getElementById("mindmap");
+            container.innerHTML = "";
+
+            // 计算所有节点的边界
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            Object.values(positions).forEach(pos => {
+                minX = Math.min(minX, pos.x);
+                minY = Math.min(minY, pos.y);
+                maxX = Math.max(maxX, pos.x);
+                maxY = Math.max(maxY, pos.y);
+            });
+
+            const padding = 60;
+            const contentWidth = maxX - minX + padding * 2;
+            const contentHeight = maxY - minY + padding * 2;
+
+            // 让内容居中于mindmap容器
+            const containerRect = container.getBoundingClientRect();
+            const offsetX = (containerRect.width - contentWidth) / 2;
+            const offsetY = (containerRect.height - contentHeight) / 2;
+
+            const content = document.createElement("div");
+            content.style.position = "absolute";
+            content.style.width = contentWidth + "px";
+            content.style.height = contentHeight + "px";
+            content.style.left = offsetX > 0 ? offsetX + "px" : "0";
+            content.style.top = offsetY > 0 ? offsetY + "px" : "0";
+
+            // 1. 渲染节点并插入DOM，记录节点DOM
+            const nodeElements = {};
+            nodes.forEach(node => {
+                const pos = positions[node.id];
+                const element = document.createElement("div");
+                element.className = `node level-${node.level}`;
+                element.textContent = node.text;
+                element.style.left = `${pos.x - minX + padding}px`;
+                element.style.top = `${pos.y - minY + padding}px`;
+                element.style.position = "absolute";
+                element.style.transform = "translate(-50%, -50%)";
+                content.appendChild(element);
+                nodeElements[node.id] = element;
+            });
+            container.appendChild(content);
+
+            // 2. 获取每个节点的真实中心点（相对于content容器左上角）
+            const nodeCenters = {};
+            nodes.forEach(node => {
+                const el = nodeElements[node.id];
+                const rect = el.getBoundingClientRect();
+                const parentRect = content.getBoundingClientRect();
+                nodeCenters[node.id] = {
+                    x: rect.left + rect.width / 2 - parentRect.left,
+                    y: rect.top + rect.height / 2 - parentRect.top
+                };
+            });
+
+            // 3. 渲染所有连接线（用节点真实中心点）
+            connections.forEach(conn => {
+                const from = nodeCenters[conn.from];
+                const to = nodeCenters[conn.to];
+                const dx = to.x - from.x;
+                const dy = to.y - from.y;
+                const length = Math.sqrt(dx * dx + dy * dy);
+                const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+                const line = document.createElement("div");
+                line.className = "connection";
+                line.style.left = `${from.x}px`;
+                line.style.top = `${from.y}px`;
+                line.style.width = `${length}px`;
+                line.style.transform = `rotate(${angle}deg)`;
+                line.style.position = "absolute";
+                line.style.transformOrigin = "0 50%";
+                content.appendChild(line);
+            });
+        }
+
+        // 主入口
+        function generateMindmap() {
+            const text = document.getElementById('textInput').value.trim();
+            const nodes = parseTextToNodes(text); // 解析输入
+            if (nodes.length === 0) {
+                document.getElementById("mindmap").innerHTML = "<div class='loading'>请输入内容生成思维导图</div>";
+                return;
+            }
+            const { positions, connections } = calculateLayout(nodes); // 计算布局
+            renderMindmap(nodes, positions, connections); // 渲染
+        }
+
+        // 默认内容
+        document.getElementById('textInput').value = `# Main Topic
+## Subtopic 1
+### Detail A
+### Detail B
+## Subtopic 2
+### Detail C
+#### Sub-detail 1
+#### Sub-detail 2`;
+
+        // 页面加载时自动渲染
+        generateMindmap();
+    </script>    
+    </body>
+</html>
